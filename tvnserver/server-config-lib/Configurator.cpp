@@ -25,6 +25,7 @@
 #include "win-system/Environment.h"
 
 #include "config-lib/RegistrySettingsManager.h"
+#include "config-lib/IniFileSettingsManager.h"
 
 #include "win-system/Registry.h"
 #include "win-system/RegistryKey.h"
@@ -34,7 +35,7 @@
 Configurator *Configurator::s_instance = NULL;
 
 Configurator::Configurator()
-: m_isConfiguringService(false), m_isConfigLoadedPartly(false),
+: m_isConfiguringService(false),m_isConfiguringForPortableRun(false),m_isConfigLoadedPartly(false),
   m_isFirstLoad(true), m_regSA(0)
 {
   try {
@@ -70,6 +71,19 @@ bool Configurator::load()
   return load(m_isConfiguringService);
 }
 
+bool Configurator:: reloadConfig()
+{
+	bool isOk = false;
+
+	SettingsManager* sm = getSettingsManager(m_isConfiguringService);
+
+	isOk = load(sm);
+
+	delete sm;
+
+	return isOk;
+}
+
 bool Configurator::save()
 {
   return save(m_isConfiguringService);
@@ -79,17 +93,13 @@ bool Configurator::load(bool forService)
 {
   bool isOk = false;
 
-  HKEY rootKey = forService ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
-
-  SECURITY_ATTRIBUTES *sa = 0;
-  if (forService && m_regSA != 0) {
-    sa = m_regSA->getServiceSA();
-  }
-  RegistrySettingsManager sm(rootKey, _T("Software\\TightVNC\\Server\\"), sa);
-
-  isOk = load(&sm);
-
+  SettingsManager* sm = getSettingsManager(forService);
+  
+  isOk = load(sm);
+ 
   notifyReload();
+
+  delete sm;
 
   return isOk;
 }
@@ -98,17 +108,40 @@ bool Configurator::save(bool forService)
 {
   bool isOk = false;
 
-  HKEY rootKey = forService ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
+  SettingsManager* sm = getSettingsManager(forService);
+ 
+  isOk = save(sm);
 
-  SECURITY_ATTRIBUTES *sa = 0;
-  if (forService && m_regSA != 0) {
-    sa = m_regSA->getServiceSA();
-  }
-  RegistrySettingsManager sm(rootKey, _T("Software\\TightVNC\\Server\\"), sa);
-
-  isOk = save(&sm);
-
+  delete sm;
   return isOk;
+}
+
+SettingsManager* Configurator::getSettingsManager( bool forService ) 
+{
+    const TCHAR* iniFileName = _T( "\\server_settings.ini");
+    if ( m_isConfiguringForPortableRun ) 
+    { 
+        StringStorage iniFileFullPath( getVncIniDirectoryPath() );
+        if ( iniFileFullPath.isEmpty() ) 
+        {
+            Environment::getCurrentModuleFolderPath(&iniFileFullPath);
+            iniFileFullPath.appendString( _T("\\..\\data") );
+        }
+        iniFileFullPath.appendString(iniFileName);
+        return new IniFileSettingsManager(iniFileFullPath.getString(),_T("80000001\\Software\\ORL\\WinVNC3") );
+
+    }
+
+    HKEY rootKey = forService ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
+
+    SECURITY_ATTRIBUTES *sa = 0;
+
+    if (forService && m_regSA != 0) {
+        sa = m_regSA->getServiceSA();
+    }
+
+    return new RegistrySettingsManager(rootKey, _T("Software\\TightVNC\\Server\\"), sa);
+
 }
 
 bool Configurator::save(SettingsManager *sm)
@@ -137,41 +170,41 @@ bool Configurator::save(SettingsManager *sm)
 
 bool Configurator::load(SettingsManager *sm)
 {
-  bool loadResult = true;
+	bool loadResult = true;
 
-  {
-    AutoLock l(&m_serverConfig);
+	{
+		AutoLock l(&m_serverConfig);
 
-    if (!loadPortMappingContainer(sm, m_serverConfig.getPortMappingContainer())) {
-      loadResult = false;
-    }
-  }
+		if (!loadPortMappingContainer(sm, m_serverConfig.getPortMappingContainer())) {
+			loadResult = false;
+		}
+	}
 
-  if (!loadQueryConfig(sm, &m_serverConfig)) {
-    loadResult = false;
-  }
-  if (!loadInputHandlingConfig(sm, &m_serverConfig)) {
-    loadResult = false;
-  }
+	if (!loadQueryConfig(sm, &m_serverConfig)) {
+		loadResult = false;
+	}
+	if (!loadInputHandlingConfig(sm, &m_serverConfig)) {
+		loadResult = false;
+	}
 
-  {
-    AutoLock l(&m_serverConfig);
+	{
+		AutoLock l(&m_serverConfig);
 
-    if (!loadIpAccessControlContainer(sm, m_serverConfig.getAccessControl())) {
-      loadResult = false;
-    }
-  }
+		if (!loadIpAccessControlContainer(sm, m_serverConfig.getAccessControl())) {
+			loadResult = false;
+		}
+	}
 
-  if (!loadServerConfig(sm, &m_serverConfig)) {
-    loadResult = false;
-  }
-  if (!loadVideoRegionConfig(sm, &m_serverConfig)) {
-    loadResult = false;
-  }
+	if (!loadServerConfig(sm, &m_serverConfig)) {
+		loadResult = false;
+	}
+	if (!loadVideoRegionConfig(sm, &m_serverConfig)) {
+		loadResult = false;
+	}
 
-  m_isFirstLoad = false;
+	m_isFirstLoad = false;
 
-  return loadResult;
+	return loadResult;
 }
 
 bool Configurator::savePortMappingContainer(SettingsManager *sm)
@@ -705,6 +738,13 @@ bool Configurator::loadServerConfig(SettingsManager *sm, ServerConfig *config)
   } else {
     m_isConfigLoadedPartly = true;
     m_serverConfig.setShowTrayIconFlag(boolVal);
+  }
+
+  if (!sm->getBoolean(_T("ReloadConfigOnClientAuth"), &boolVal)) {
+	  loadResult = false;
+  } else {
+	  m_isConfigLoadedPartly = true;
+	  m_serverConfig.reloadConfigOnClientAuth(boolVal);
   }
   return loadResult;
 }

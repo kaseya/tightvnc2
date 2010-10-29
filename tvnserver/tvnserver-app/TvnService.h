@@ -37,19 +37,36 @@ class TvnService : public Service,
 {
 public:
   static const TCHAR SERVICE_COMMAND_LINE_KEY[];
+  static const TCHAR SERVICE_PORTABLE_COMMAND_LINE_KEY[];
+
   static const TCHAR SERVICE_NAME[];
+  static const TCHAR SERVICE_PORTABLE_NAME[];
   static const TCHAR SERVICE_NAME_TO_DISPLAY[];
+  static const TCHAR SERVICE_PORTABLE_NAME_TO_DISPLAY[];
+
 public:
-  TvnService();
+  TvnService(const TCHAR* serviceName = SERVICE_NAME, const TCHAR *commandLine =0);
   virtual ~TvnService();
 
   virtual void onTvnServerShutdown();
 
   static void install() throw(SystemException);
+  static void installPortable(const TCHAR *commandLine =0 ) throw(SystemException);
+
   static void remove() throw(SystemException);
+  static void removePortable() throw(SystemException);
+
   static void reinstall() throw(SystemException);
+  static void reinstallportable( const TCHAR *commandLine =0, boolean shouldReinstall = false)  throw(SystemException);
+
+  
   static void start(bool waitCompletion = false) throw(SystemException);
+  static void startPortable(bool waitCompletion = false) throw(SystemException);
+  
   static void stop(bool waitCompletion = false) throw(SystemException);
+  static void stopPortable(bool waitCompletion = false) throw(SystemException);
+
+  static boolean isServiceRunning(const TCHAR* name) throw(SystemException);
 
 protected:
   virtual void onStart() throw(SystemException);
@@ -58,11 +75,21 @@ protected:
 
   virtual void onStop();
 
-  static bool getBinPath(StringStorage *binPath);
+  static bool getBinPath(StringStorage *binPath, const TCHAR* serviceName, const TCHAR *commandLine =0 );
+
+private:
+  void parse() throw(SystemException);
+
+  static void installService( const TCHAR* serviceName, const TCHAR* serviceDisplayName, StringStorage binPath, DWORD startType = SERVICE_AUTO_START);
+  static void removeService(const TCHAR* serviceName ) throw(SystemException);
+  static void startService(const TCHAR* serviceName, bool waitCompletion = false) throw(SystemException);
+  static void stopService(const TCHAR* serviceName, bool waitCompletion = false) throw(SystemException);
 
 protected:
   WindowsEvent m_shutdownEvent;
   TvnServer *m_tvnServer;
+  StringStorage m_commandLine;
+  StringStorage m_vncIniDirectory;
 };
 
 #endif

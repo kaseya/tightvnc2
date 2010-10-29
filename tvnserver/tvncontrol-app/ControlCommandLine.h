@@ -45,6 +45,12 @@ public:
 
   static const TCHAR SET_CONTROL_PASSWORD[];
   static const TCHAR SET_PRIMARY_VNC_PASSWORD[];
+  
+  static const TCHAR PORTABLE[];
+
+  static const TCHAR SET_VNC_PORT[]; 
+  static const TCHAR VNC_INI_DIRECTORY[];
+
 
   static const TCHAR SLAVE_MODE[];
   static const TCHAR DONT_ELEVATE[];
@@ -70,11 +76,22 @@ public:
   bool hasControlAppFlag();
   bool hasDontElevateFlag();
   bool isSlave();
+  bool hasPortableFlag();
+  bool hasSetVncPortFlag();
+  bool hasVncIniDirectoryFlag();
+  bool hasSetVncPortAndPrimaryPasswdFlag();
 
   const TCHAR *getPrimaryVncPassword() const;
   const TCHAR *getControlPassword() const;
+  const int    getVncPort() const;
+  const TCHAR *getVncIniDirectoryPath() const;
+
 
   bool isCommandSpecified();
+private:
+    void setVncPort();
+    void setVncOrControlPassword();
+    void setVncPortAndPrimaryPassword();
 
 protected:
   StringStorage m_vncPassword;
@@ -82,6 +99,8 @@ protected:
 
   StringStorage m_connectHostName;
   StringStorage m_passwordFile;
+  StringStorage m_vncPort;
+  StringStorage m_vncIniDirectoryPath;
 };
 
 #endif

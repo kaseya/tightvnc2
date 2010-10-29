@@ -86,6 +86,8 @@ private:
     *value = (T)intValue;
     return true;
   };
+  
+  void iniFileExists();
 
 };
 

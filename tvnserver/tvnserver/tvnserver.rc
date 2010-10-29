@@ -377,7 +377,7 @@ STRINGTABLE
     IDS_ACTION_DENY               "Deny"
     IDS_ACTION_QUERY              "Query"
     IDS_USER_CANCEL_CONTROL_AUTH  "Authentication cancelled by the user."
-    IDS_TVNSERVER_USAGE           "TightVNC Server supports the following command-line options:\n\ntvnserver\t-help\ntvnserver\t[ -run ]\ntvnserver\t{ -install | -reinstall | -remove | -start | -stop }  [ -silent ]\ntvnserver\t{ -controlservice | -controlapp }\ntvnserver\t{ -controlservice | -controlapp }\n\t   { -connect HOST | -disconnectall | -reload | -shutdown }\n\t   [ -passfile FILE ]\ntvnserver\t{ -configservice | -configapp }"
+    IDS_TVNSERVER_USAGE           "TightVNC Server supports the following command-line options:\n\ntvnserver\t-help\ntvnserver\t[ -run ]\ntvnserver\t{ -runportable }\ntvnserver\t{ -install | -reinstall | -remove | -start | -stop }  [ -silent ]\ntvnserver\t{ -controlservice | -controlapp }\ntvnserver\t{ -controlservice | -controlapp }\n\t   { -connect HOST | -disconnectall | -reload | -shutdown }\n\t   [ -passfile FILE ]\ntvnserver\t{ -configservice | -configapp [-portable] }"
     IDS_SERVER_NOT_LISTENING      "not listening"
     IDS_FAILED_TO_CONNECT_TO_CONTROL_SERVER "Failed to connect to TightVNC Server."
     IDS_MBC_TVNSERVER_USAGE       "TightVNC Server Usage Help"

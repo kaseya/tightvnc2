@@ -44,6 +44,13 @@ public:
   bool getServiceFlag() { return m_isConfiguringService; }
   void setServiceFlag(bool asService) { m_isConfiguringService = asService; }
 
+  bool getPortableRunFlag() { return m_isConfiguringForPortableRun; }
+  void setPortableRunFlag(bool asPortableRun ) { m_isConfiguringForPortableRun = asPortableRun; }
+
+  const TCHAR* getVncIniDirectoryPath() { return m_vncIniDirectoryPath.getString(); }
+  void setVncIniDirectoryPath( const TCHAR* vncIniDirectoryPath ) { m_vncIniDirectoryPath.setString( vncIniDirectoryPath ); }
+
+
   bool load();
   bool save();
 
@@ -55,6 +62,7 @@ public:
   void notifyReload();
 
   ServerConfig *getServerConfig() { return &m_serverConfig; }
+  bool reloadConfig();
 
 private:
 
@@ -82,16 +90,22 @@ private:
 
   bool load(bool forService);
   bool save(bool forService);
+
+
+  SettingsManager* getSettingsManager( bool forService );
 protected:
 
   ServerConfig m_serverConfig;
 
   bool m_isConfiguringService;
+  bool m_isConfiguringForPortableRun;
   bool m_isConfigLoadedPartly;
 
   RegistrySecurityAttributes *m_regSA;
 
   bool m_isFirstLoad;
+
+  StringStorage m_vncIniDirectoryPath;
 
   static Configurator *s_instance;
 };

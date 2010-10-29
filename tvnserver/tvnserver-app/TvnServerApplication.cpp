@@ -53,17 +53,27 @@ int TvnServerApplication::run()
   }
 
   GlobalMutex *appInstanceMutex;
+  StringStorage applicationName(_T("tvnserverApplication") );
+  StringStorage vncIniDirPath;
+
+  parser.optionSpecified(ServerCommandLine::SERVER_NAME_KEY, &applicationName);
+  parser.optionSpecified(ServerCommandLine::VNC_INI_DIRECTORY_PATH, &vncIniDirPath);
+
 
   try {
-    appInstanceMutex = new GlobalMutex(_T("tvnserverApplication"), false, true);
+    appInstanceMutex = new GlobalMutex(applicationName.getString() , false, true);
   } catch (...) {
     MessageBox(0,
                StringTable::getString(IDS_SERVER_ALREADY_RUNNING),
                StringTable::getString(IDS_MBC_TVNSERVER), MB_OK | MB_ICONEXCLAMATION);
     return 1;
   }
+  
+  StringStorage firstKey(_T(""));
+  parser.getOption(0, &firstKey);
 
-  m_tvnServer = new TvnServer(false);
+
+  m_tvnServer = new TvnServer(false, vncIniDirPath, firstKey.isEqualTo(ServerCommandLine::RUN_SERVER_PORTABLE_KEY));
 
   m_tvnServer->addListener(this);
 

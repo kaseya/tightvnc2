@@ -94,26 +94,34 @@ int ControlApplication::run()
   }
 
   if (cmdLineParser.hasConfigAppFlag() || cmdLineParser.hasConfigServiceFlag()) {
-    return runConfigurator(cmdLineParser.hasConfigServiceFlag(), cmdLineParser.hasDontElevateFlag());
+    return runConfigurator( cmdLineParser );
   }
 
-  if (cmdLineParser.hasSetControlPasswordFlag() || cmdLineParser.hasSetVncPasswordFlag()) {
-    Configurator::getInstance()->setServiceFlag(true);
-    Configurator::getInstance()->load();
-    ServerConfig *config = Configurator::getInstance()->getServerConfig();
-    UINT8 cryptedPass[8];
-    if (cmdLineParser.hasSetControlPasswordFlag()) {
-      getCryptedPassword(cryptedPass, cmdLineParser.getControlPassword());
-      config->setControlPassword((const unsigned char *)cryptedPass);
-      config->useControlAuth(true);
-    } else {
-      getCryptedPassword(cryptedPass, cmdLineParser.getPrimaryVncPassword());
-      config->setPrimaryPassword((const unsigned char *)cryptedPass);
-      config->useAuthentication(true);
-    }
-    Configurator::getInstance()->save();
-    return 0;
+  if(cmdLineParser.hasSetVncPortAndPrimaryPasswdFlag() ) {
+      bool hasServiceFlag = ! cmdLineParser.hasPortableFlag();
+      ServerConfig *config = loadServerConfig( hasServiceFlag, cmdLineParser.hasPortableFlag(), cmdLineParser.getVncIniDirectoryPath() );
+      setVncPort(cmdLineParser, config);
+      setControlOrVncPrimaryPassword(cmdLineParser, config);
+      Configurator::getInstance()->save();
+      return 0;
   }
+  if (cmdLineParser.hasSetControlPasswordFlag() || cmdLineParser.hasSetVncPasswordFlag()) {
+      bool hasServiceFlag = ! cmdLineParser.hasPortableFlag();
+      ServerConfig *config = loadServerConfig( hasServiceFlag, cmdLineParser.hasPortableFlag(), cmdLineParser.getVncIniDirectoryPath() );
+      setControlOrVncPrimaryPassword(cmdLineParser, config);
+      Configurator::getInstance()->save();
+      return 0;
+  }
+  
+  if ( cmdLineParser.hasSetVncPortFlag() ) {
+      bool hasServiceFlag = ! cmdLineParser.hasPortableFlag();
+      ServerConfig *config = loadServerConfig( hasServiceFlag, cmdLineParser.hasPortableFlag(), cmdLineParser.getVncIniDirectoryPath() );
+      setVncPort(cmdLineParser, config);
+      Configurator::getInstance()->save();
+      return 0;
+  }
+
+
 
   int retCode = 0;
 
@@ -292,16 +300,22 @@ int ControlApplication::runControlCommand(Command *command)
   return errorCode;
 }
 
-int ControlApplication::runConfigurator(bool configService, bool isRunAsRequested)
+int ControlApplication::runConfigurator( ControlCommandLine cmdLineParser )
 {
-  if (configService && (IsUserAnAdmin() == FALSE)) {
-    if (isRunAsRequested) {
-      MessageBox(0,
-        StringTable::getString(IDS_ADMIN_RIGHTS_NEEDED),
-        StringTable::getString(IDS_MBC_TVNCONTROL),
-        MB_OK | MB_ICONERROR);
-      return 0;
-    }
+   bool configService = cmdLineParser.hasConfigServiceFlag();
+   bool isRunAsRequested = cmdLineParser.hasDontElevateFlag();
+   bool runAsPortable = cmdLineParser.hasPortableFlag();
+
+    if (configService && (IsUserAnAdmin() == FALSE)) 
+    {
+        if (isRunAsRequested) 
+        {
+            MessageBox(0,
+                StringTable::getString(IDS_ADMIN_RIGHTS_NEEDED),
+                StringTable::getString(IDS_MBC_TVNCONTROL),
+                MB_OK | MB_ICONERROR);
+            return 0;
+        }
     StringStorage pathToBinary;
     StringStorage childCommandLine;
 
@@ -322,10 +336,7 @@ int ControlApplication::runConfigurator(bool configService, bool isRunAsRequeste
     return 0;
   }
 
-  Configurator *configurator = Configurator::getInstance();
-
-  configurator->setServiceFlag(configService);
-  configurator->load();
+  loadServerConfig(configService, runAsPortable, cmdLineParser.getVncIniDirectoryPath() );
 
   ConfigDialog confDialog(configService, 0);
 
@@ -341,4 +352,36 @@ void ControlApplication::getCryptedPassword(UINT8 cryptedPass[8], const TCHAR *p
   plainTextPassTCHAR.toAnsiString(plainTextPassANSI, 9);
   memcpy(textPlainPass, plainTextPassANSI, strlen(plainTextPassANSI));
   VncPassCrypt::getEncryptedPass(cryptedPass, textPlainPass);
+}
+
+ServerConfig* ControlApplication::loadServerConfig( bool hasServiceFlag, bool hasPortableFlag, const TCHAR* vncIniDirectoryPath )
+{
+    Configurator *configurator = Configurator::getInstance();
+
+    configurator->setServiceFlag( hasServiceFlag );
+    configurator->setPortableRunFlag( hasPortableFlag );
+    configurator->setVncIniDirectoryPath( vncIniDirectoryPath );
+
+    configurator->load();
+    return configurator->getServerConfig();
+}
+
+void ControlApplication::setControlOrVncPrimaryPassword(ControlCommandLine& cmdLineParser, ServerConfig *config)
+{
+    UINT8 cryptedPass[8];
+    if (cmdLineParser.hasSetControlPasswordFlag()) {
+        getCryptedPassword(cryptedPass, cmdLineParser.getControlPassword());
+        config->setControlPassword((const unsigned char *)cryptedPass);
+        config->useControlAuth(true);
+    } else {
+        getCryptedPassword(cryptedPass, cmdLineParser.getPrimaryVncPassword());
+        config->setPrimaryPassword((const unsigned char *)cryptedPass);
+        config->useAuthentication(true);
+    }
+   
+}
+
+void ControlApplication::setVncPort(ControlCommandLine& cmdLineParser, ServerConfig *config)
+{
+    config->setRfbPort( cmdLineParser.getVncPort() );
 }

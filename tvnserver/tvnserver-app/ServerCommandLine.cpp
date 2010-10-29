@@ -25,6 +25,13 @@
 #include "ServerCommandLine.h"
 #include "util/CommandLine.h"
 
+const TCHAR ServerCommandLine::RUN_SERVER_PORTABLE_KEY[] = _T("-runportable");
+const TCHAR ServerCommandLine::RUN_SERVER_KEY[] = _T("-run");
+const TCHAR ServerCommandLine::SERVER_NAME_KEY[] = _T("-servername");
+const TCHAR ServerCommandLine::VNC_INI_DIRECTORY_PATH[] = _T("-inidirectory");
+
+
+
 ServerCommandLine::ServerCommandLine()
 {
 }
@@ -42,13 +49,19 @@ bool ServerCommandLine::parse(const TCHAR *commandLine)
     { _T("/help"), NO_ARG },
     { _T("/h"), NO_ARG },
     { _T("/?"), NO_ARG },
-    { _T("-run"), NO_ARG }
+    { RUN_SERVER_KEY, NO_ARG },
+    { RUN_SERVER_PORTABLE_KEY, NO_ARG },
+    { SERVER_NAME_KEY,  NEEDS_ARG },
+    { VNC_INI_DIRECTORY_PATH,  NEEDS_ARG },
+
+
+
   };
 
   if (!CommandLine::parse(format, sizeof(format) / sizeof(CommandLineFormat), commandLine)) {
     return false;
   }
-  if (showHelp() && optionSpecified(_T("-run"))) {
+  if (showHelp() && optionSpecified(RUN_SERVER_KEY) && optionSpecified(RUN_SERVER_PORTABLE_KEY)) {
     return false;
   }
 

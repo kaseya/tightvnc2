@@ -50,16 +50,19 @@
 #include <crtdbg.h>
 #include <time.h>
 
-TvnServer::TvnServer(bool runsInServiceContext)
+TvnServer::TvnServer(bool runsInServiceContext, StringStorage vncIniDirPath /*""*/, bool runAsPortable /*=false*/ )
 : Singleton<TvnServer>(),
   ListenerContainer<TvnServerListener *>(),
   m_runAsService(runsInServiceContext),
+  m_runPortable(runAsPortable),
   m_rfbClientManager(0),
   m_httpServer(0), m_controlServer(0), m_rfbServer(0)
 {
   Configurator *configurator = Configurator::getInstance();
 
   configurator->setServiceFlag(m_runAsService);
+  configurator->setPortableRunFlag(m_runPortable);
+  configurator->setVncIniDirectoryPath ( vncIniDirPath.getString() );
 
   configurator->load();
 
@@ -226,6 +229,11 @@ bool TvnServer::isRunningAsService() const
   return m_runAsService;
 }
 
+bool TvnServer::isRunningAsPortableService() const
+{
+	return m_runAsService && m_runPortable;
+}
+
 void TvnServer::afterFirstClientConnect()
 {
 }
@@ -243,6 +251,12 @@ void TvnServer::afterLastClientDisconnect()
   case ServerConfig::DA_LOGOUT_WORKSTATION:
     keys.format(_T("%s"), AdditionalActionApplication::LOGOUT_KEY);
     break;
+  case ServerConfig::DA_STOP_AND_REMOVE_SERVICE:
+	  if (isRunningAsPortableService())
+	  {
+	      keys.format(_T("%s"), AdditionalActionApplication::STOP_AND_REMOVE_PORTABLE_SERVICE_KEY);
+	      break;
+	  }
   default:
     return;
   }
@@ -391,3 +405,4 @@ void TvnServer::resetLogFilePath()
 
   m_log.changeFilename(pathToLogFile.getString());
 }
+

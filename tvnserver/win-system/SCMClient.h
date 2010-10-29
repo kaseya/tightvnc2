@@ -49,13 +49,13 @@ public:
   SCMClient(DWORD desiredAccess = SC_MANAGER_ALL_ACCESS) throw(SystemException);
   virtual ~SCMClient();
   void installService(const TCHAR *name, const TCHAR *nameToDisplay,
-                      const TCHAR *binPath, const TCHAR *dependencies = _T("")) throw(SystemException);
+                      const TCHAR *binPath, const TCHAR *dependencies = _T(""), DWORD startType = SERVICE_AUTO_START) throw(SystemException);
   void removeService(const TCHAR *name) throw(SystemException);
   void startService(const TCHAR *name, bool waitCompletion = false)
     throw(SystemException, SCMClientException);
   void stopService(const TCHAR *name, bool waitCompletion = false)
     throw(SystemException, SCMClientException);
-
+  boolean isServiceRunning(const TCHAR *name) const throw(SystemException);
 private:
   DWORD getServiceState(SC_HANDLE hService) const throw(SystemException);
 

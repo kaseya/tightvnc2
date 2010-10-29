@@ -64,7 +64,7 @@ SCMClient::~SCMClient()
 }
 
 void SCMClient::installService(const TCHAR *name, const TCHAR *nameToDisplay,
-                               const TCHAR *binPath, const TCHAR *dependencies)
+                               const TCHAR *binPath, const TCHAR *dependencies, DWORD startType /*default SERVICE_AUTO_START*/)
 {
   SC_HANDLE serviceHandle = CreateService(
     m_managerHandle,              
@@ -72,7 +72,7 @@ void SCMClient::installService(const TCHAR *name, const TCHAR *nameToDisplay,
     nameToDisplay,               
     SERVICE_ALL_ACCESS,           
     SERVICE_WIN32_OWN_PROCESS,
-    SERVICE_AUTO_START,           
+    startType,           
     SERVICE_ERROR_NORMAL,         
     binPath,                      
     NULL,                         
@@ -222,4 +222,26 @@ DWORD SCMClient::getServiceState(SC_HANDLE hService) const
   }
 
   return status.dwCurrentState;
+}
+
+boolean SCMClient::isServiceRunning(const TCHAR *name) const {
+    boolean isRunning = false;
+    SC_HANDLE serviceHandle = OpenService(m_managerHandle, name, SERVICE_START | SERVICE_QUERY_STATUS);
+    if (serviceHandle == NULL) {
+        int errorCode = GetLastError();
+        if (errorCode == ERROR_SERVICE_DOES_NOT_EXIST){
+            return false;
+        } else { 
+            throw SystemException(errorCode);
+        }
+    }
+    try {
+        DWORD state = getServiceState(serviceHandle);
+        isRunning = state == SERVICE_RUNNING || state == SERVICE_START_PENDING;
+    } catch(...) {
+        CloseServiceHandle(serviceHandle);
+        throw;
+    }
+    CloseServiceHandle(serviceHandle);
+    return isRunning;
 }

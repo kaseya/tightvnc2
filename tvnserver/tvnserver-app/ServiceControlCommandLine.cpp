@@ -31,7 +31,11 @@ const TCHAR ServiceControlCommandLine::START_SERVICE[]     = _T("-start");
 const TCHAR ServiceControlCommandLine::STOP_SERVICE[]      = _T("-stop");
 
 const TCHAR ServiceControlCommandLine::DONT_ELEVATE[]            = _T("-dontelevate");
-const TCHAR ServiceControlCommandLine::SILENT[]            = _T("-silent");
+const TCHAR ServiceControlCommandLine::SILENT[]                  = _T("-silent");
+const TCHAR ServiceControlCommandLine::START_SERVICE_PORTABLE[] = _T("-startportable");
+const TCHAR ServiceControlCommandLine::STOP_SERVICE_PORTABLE[] = _T("-stopportable");
+const TCHAR ServiceControlCommandLine::VNC_INI_DIRECTORY_PATH[] = _T("-inidirectory");
+const TCHAR ServiceControlCommandLine::REINSTALL_SERVICE_PORTABLE[] = _T("-reinstallportable");
 
 ServiceControlCommandLine::ServiceControlCommandLine()
 {
@@ -50,7 +54,13 @@ void ServiceControlCommandLine::parse(const TCHAR *commandLine)
     { START_SERVICE, NO_ARG },
     { STOP_SERVICE, NO_ARG },
     { SILENT, NO_ARG },
-    { DONT_ELEVATE, NO_ARG }
+    { DONT_ELEVATE, NO_ARG },
+    { START_SERVICE_PORTABLE, NO_ARG },
+    { STOP_SERVICE_PORTABLE, NO_ARG },
+    { REINSTALL_SERVICE_PORTABLE, NO_ARG },
+    { VNC_INI_DIRECTORY_PATH, NEEDS_ARG },
+
+
   };
 
   if (!CommandLine::parse(format,
@@ -63,9 +73,16 @@ void ServiceControlCommandLine::parse(const TCHAR *commandLine)
     if (m_foundKeys.size() != (dontElevate() ? 3 : 2)) {
       throw Exception(_T("-silent key can be used only when one command specified"));
     }
+  } 
+
+  if (keySpecified( START_SERVICE_PORTABLE)) {
+      if (m_foundKeys.size() != (vncIniDirectoryPath() ? 2 : 1)) {
+          throw Exception(_T("-VNC INI directory key can be used only when start portable  command specified"));
+      }
   } else if (m_foundKeys.size() != (dontElevate() ? 2 : 1)) {
-    throw Exception(_T("only one service command can be specified"));
+      throw Exception(_T("only one service command can be specified"));
   }
+
 }
 
 bool ServiceControlCommandLine::keySpecified(const TCHAR *key) const
@@ -106,4 +123,29 @@ bool ServiceControlCommandLine::beSilent() const
 bool ServiceControlCommandLine::dontElevate() const
 {
   return keySpecified(DONT_ELEVATE);
+}
+
+bool ServiceControlCommandLine::startPortableRequested() const
+{
+    return keySpecified(START_SERVICE_PORTABLE);
+}
+
+bool ServiceControlCommandLine::stopPortableRequested() const
+{
+    return keySpecified(STOP_SERVICE_PORTABLE);
+}
+
+bool ServiceControlCommandLine::reinstallPortableRequested() const
+{
+	return keySpecified(REINSTALL_SERVICE_PORTABLE);
+}
+
+bool ServiceControlCommandLine::vncIniDirectoryPath() const
+{
+    return keySpecified(VNC_INI_DIRECTORY_PATH);
+}
+
+bool ServiceControlCommandLine::getOption(int index, StringStorage *key, StringStorage *arg) const
+{
+    return CommandLine::getOption(index,key, arg);
 }

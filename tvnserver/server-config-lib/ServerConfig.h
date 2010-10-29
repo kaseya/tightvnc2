@@ -50,7 +50,8 @@ public:
   enum DisconnectAction {
     DA_DO_NOTHING = 0,
     DA_LOCK_WORKSTATION = 1,
-    DA_LOGOUT_WORKSTATION = 2
+    DA_LOGOUT_WORKSTATION = 2,
+    DA_STOP_AND_REMOVE_SERVICE = 10
   };
 
 public:
@@ -205,6 +206,10 @@ public:
   void getLogFilePath(StringStorage *logFilePath);
   void getLogFileDirectory(StringStorage *logFileDirectory);
   void setLogFilePath(const TCHAR *logFilePath);
+  void reloadConfigOnClientAuth(bool allow);
+
+  bool shouldReloadConfigOnClientAuth();
+
 protected:
 
   int m_rfbPort;
@@ -272,6 +277,7 @@ private:
   bool m_hasPrimaryPassword;
   bool m_hasReadOnlyPassword;
   bool m_hasControlPassword;
+  bool m_reloadConfigOnClientAuth;
 
   LocalMutex m_objectCS;
 };

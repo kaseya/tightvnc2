@@ -52,7 +52,8 @@ class TvnServer : public Singleton<TvnServer>,
                   public RfbClientManagerEventListener
 {
 public:
-  TvnServer(bool runsInServiceContext);
+  TvnServer(bool runsInServiceContext, StringStorage vncIniDirPath = _T( ""), bool runAsPortable=false);
+  
   virtual ~TvnServer();
 
   void getServerInfo(TvnServerInfo *info);
@@ -62,6 +63,7 @@ public:
   void generateExternalShutdownSignal();
 
   bool isRunningAsService() const;
+  bool isRunningAsPortableService() const;
 
   virtual void afterFirstClientConnect();
 
@@ -84,6 +86,7 @@ protected:
   LocalMutex m_mutex;
 
   const bool m_runAsService;
+  const bool m_runPortable;
 
   RfbClientManager *m_rfbClientManager;
   ControlServer *m_controlServer;

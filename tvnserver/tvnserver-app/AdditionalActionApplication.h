@@ -34,6 +34,8 @@ class AdditionalActionApplication : public LocalWindowsApplication
 public:
   static const TCHAR LOCK_WORKSTATION_KEY[];
   static const TCHAR LOGOUT_KEY[];
+  static const TCHAR STOP_AND_REMOVE_PORTABLE_SERVICE_KEY[];
+
 
 public:
   AdditionalActionApplication(HINSTANCE hInstance, const TCHAR *commandLine) throw(SystemException);

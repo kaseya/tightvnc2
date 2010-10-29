@@ -42,7 +42,7 @@ ServerConfig::ServerConfig()
   m_isTrayIconDisabled(false), m_allowLoopbackConnections(false),
   m_videoRecognitionInterval(3000), m_grabTransparentWindows(true),
   m_saveLogToAllUsersPath(false), m_hasControlPassword(false),
-  m_showTrayIcon(true)
+  m_showTrayIcon(true), m_reloadConfigOnClientAuth(false)
 {
   memset(m_primaryPassword,  0, sizeof(m_primaryPassword));
   memset(m_readonlyPassword, 0, sizeof(m_readonlyPassword));
@@ -107,6 +107,7 @@ void ServerConfig::serialize(DataOutputStream *output)
   output->writeInt8(m_showTrayIcon ? 1 : 0);
 
   output->writeUTF8(m_logFilePath.getString());
+  output->writeInt8(m_reloadConfigOnClientAuth ? 1 : 0);
 }
 
 void ServerConfig::deserialize(DataInputStream *input)
@@ -166,6 +167,7 @@ void ServerConfig::deserialize(DataInputStream *input)
   m_showTrayIcon = input->readInt8() == 1;
 
   input->readUTF8(&m_logFilePath);
+  m_reloadConfigOnClientAuth = input->readInt8() == 1;
 }
 
 bool ServerConfig::getShowTrayIconFlag()
@@ -715,3 +717,17 @@ bool ServerConfig::getGrabTransparentWindowsFlag()
   AutoLock lock(&m_objectCS);
   return m_grabTransparentWindows;
 }
+
+void ServerConfig::reloadConfigOnClientAuth(bool allow)
+{
+  AutoLock lock(&m_objectCS);
+  m_reloadConfigOnClientAuth = allow;
+}
+
+bool ServerConfig::shouldReloadConfigOnClientAuth()
+{
+  AutoLock l(&m_objectCS);
+
+  return m_reloadConfigOnClientAuth;
+}
+

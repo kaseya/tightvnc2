@@ -91,7 +91,7 @@ int ServiceControlApplication::run()
   if (cmdLine.startRequested() && !cmdLine.dontElevate()) {
     try {
       WsConfigRunner tvncontrol(true);
-    } catch (...) { }
+    } catch (...) {  }
   }
 
   return success ? RET_OK : RET_ERR;
@@ -127,32 +127,79 @@ void ServiceControlApplication::executeCommand(const ServiceControlCommandLine *
     TvnService::start(true);
   } else if (cmdLine->stopRequested()) {
     TvnService::stop(true);
+  } else if ( cmdLine->startPortableRequested() ) {
+      if(TvnService::isServiceRunning(TvnService::SERVICE_PORTABLE_NAME)){
+        return;
+      }
+    StringStorage iniFilePath;
+    iniFilePath = extractVncDirectoryPathIfPassedInCommandLine(cmdLine, iniFilePath);
+    const TCHAR* arguments = iniFilePath.isEmpty() ? 0: iniFilePath.getString();
+    TvnService::reinstallportable(arguments) ;
+    setTvnControlStartPortableEntry();
+    TvnService::startPortable(true);
+  } else if (cmdLine->stopPortableRequested()) {
+      try {
+          TvnService::stopPortable(true);
+      } catch(Exception ) { }  
+      try {
+          TvnService::removePortable();
+      } catch(Exception ) { }  
+      try {
+          removeTvnControlStartPortableEntry();
+      } catch(Exception ) { }  
+  } else if (cmdLine->reinstallPortableRequested()) {
+      StringStorage iniFilePath;
+      iniFilePath = extractVncDirectoryPathIfPassedInCommandLine(cmdLine, iniFilePath);
+      const TCHAR* arguments = iniFilePath.isEmpty() ? 0: iniFilePath.getString();
+    TvnService::reinstallportable(arguments, true) ;
   }
 }
 
 void ServiceControlApplication::setTvnControlStartEntry() const
 {
-  StringStorage currentModuleFolderPath;
-  Environment::getCurrentModuleFolderPath(&currentModuleFolderPath);
-  StringStorage pathToTvnControl;
-  pathToTvnControl.format(_T("\"%s\\tvnserver.exe\" %s %s"),
-                          currentModuleFolderPath.getString(),
-                          ControlCommandLine::CONTROL_SERVICE,
-                          ControlCommandLine::SLAVE_MODE);
-
-  RegistryKey runKey(Registry::getCurrentLocalMachineKey(),
-                     _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
-                     false);
-  runKey.setValueAsString(_T("tvncontrol"), pathToTvnControl.getString());
+    setTvnControlStartEntryAs(_T("tvncontrol"));
 }
+
+void ServiceControlApplication::setTvnControlStartPortableEntry() const
+{
+    setTvnControlStartEntryAs(_T("tvncontrolportable"));
+} 
+
+void ServiceControlApplication::setTvnControlStartEntryAs(const TCHAR* serviceRunKey) const
+{
+    StringStorage currentModuleFolderPath;
+    Environment::getCurrentModuleFolderPath(&currentModuleFolderPath);
+    StringStorage pathToTvnControl;
+    pathToTvnControl.format(_T("\"%s\\tvnserver.exe\" %s %s"),
+        currentModuleFolderPath.getString(),
+        ControlCommandLine::CONTROL_SERVICE,
+        ControlCommandLine::SLAVE_MODE);
+
+    RegistryKey runKey(Registry::getCurrentLocalMachineKey(),
+        _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
+        false);
+    runKey.setValueAsString(serviceRunKey, pathToTvnControl.getString());
+}
+
 
 void ServiceControlApplication::removeTvnControlStartEntry() const
 {
-  RegistryKey runKey(Registry::getCurrentLocalMachineKey(),
-                     _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
-                     false);
-  runKey.deleteValue(_T("tvncontrol"));
+  removeTvnControlEntry( _T("tvncontrol") );
 }
+
+void ServiceControlApplication::removeTvnControlStartPortableEntry() const
+{
+    removeTvnControlEntry( _T("tvncontrolportable") );
+}
+
+void ServiceControlApplication::removeTvnControlEntry(const TCHAR* serviceRunKey) const
+{
+    RegistryKey runKey(Registry::getCurrentLocalMachineKey(),
+        _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
+        false);
+    runKey.deleteValue( serviceRunKey );
+}
+
 
 void ServiceControlApplication::reportError(const ServiceControlCommandLine *cmdLine,
                                             const SCMClientException *ex) const
@@ -246,4 +293,14 @@ void ServiceControlApplication::reportSuccess(const ServiceControlCommandLine *c
     const TCHAR *text = StringTable::getString(stringId);
     MessageBox(NULL, text, caption, MB_OK | MB_ICONINFORMATION);
   }
+}
+StringStorage ServiceControlApplication::extractVncDirectoryPathIfPassedInCommandLine(const ServiceControlCommandLine *cmdLine, StringStorage& iniFilePath) const
+{
+    if ( cmdLine->keySpecified(ServiceControlCommandLine::VNC_INI_DIRECTORY_PATH) ) {
+        StringStorage vncIniDirectoryKey;
+        StringStorage vncIniDirectoryValue;
+        cmdLine->getOption( 1, &vncIniDirectoryKey, &vncIniDirectoryValue );
+        iniFilePath.format(_T("%s \"%s\""),vncIniDirectoryKey.getString(),vncIniDirectoryValue.getString());
+    }
+    return iniFilePath;
 }

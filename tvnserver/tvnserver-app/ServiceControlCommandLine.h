@@ -39,6 +39,10 @@ public:
   static const TCHAR STOP_SERVICE[];
   static const TCHAR SILENT[];
   static const TCHAR DONT_ELEVATE[];
+  static const TCHAR START_SERVICE_PORTABLE[];
+  static const TCHAR STOP_SERVICE_PORTABLE[];
+  static const TCHAR VNC_INI_DIRECTORY_PATH[];
+  static const TCHAR REINSTALL_SERVICE_PORTABLE[];
 
 public:
   ServiceControlCommandLine();
@@ -47,15 +51,21 @@ public:
   void parse(const TCHAR *commandLine) throw(Exception);
 
   bool keySpecified(const TCHAR *key) const;
+  bool getOption(int index, StringStorage *key, StringStorage *arg = 0) const;
 
   bool installationRequested() const;
   bool removalRequested() const;
   bool reinstallRequested() const;
   bool startRequested() const;
   bool stopRequested() const;
+  bool startPortableRequested() const;
+  bool stopPortableRequested() const;
+  bool reinstallPortableRequested() const;
 
   bool beSilent() const;
   bool dontElevate() const;
+
+  bool vncIniDirectoryPath() const;
 };
 
 #endif

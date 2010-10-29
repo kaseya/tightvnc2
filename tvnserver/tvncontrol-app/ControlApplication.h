@@ -37,6 +37,8 @@
 
 #include "tvncontrol-app/ControlGate.h"
 #include "tvncontrol-app/ControlAuthException.h"
+#include "tvncontrol-app/ControlCommandLine.h"
+
 
 #include "ControlProxy.h"
 #include "Notificator.h"
@@ -65,10 +67,14 @@ protected:
 
   int runControlInterface(bool showIcon);
   int runControlCommand(Command *command);
-  int runConfigurator(bool configService, bool isRunAsRequested);
+  int runConfigurator( ControlCommandLine cmdLineParser );
 
 private:
   static void getCryptedPassword(UINT8 cryptedPass[8], const TCHAR *plainTextPass);
+  ServerConfig* loadServerConfig( bool hasServiceFlag, bool hasPortableFlag, const TCHAR* vncIniDirectoryPath );
+  void setControlOrVncPrimaryPassword(ControlCommandLine& cmdLineParser, ServerConfig *config);
+  void setVncPort(ControlCommandLine& cmdLineParser,ServerConfig *config);
+
 
 protected:
   Transport *m_transport;

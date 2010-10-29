@@ -48,6 +48,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
   CommandLineFormat format[] = {
     { TvnService::SERVICE_COMMAND_LINE_KEY, NO_ARG },
+    { TvnService::SERVICE_PORTABLE_COMMAND_LINE_KEY, NO_ARG },
 
     { ControlCommandLine::CONFIG_APPLICATION, NO_ARG },
     { ControlCommandLine::CONFIG_SERVICE, NO_ARG },
@@ -55,18 +56,24 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     { ControlCommandLine::SET_PRIMARY_VNC_PASSWORD, NO_ARG },
     { ControlCommandLine::CONTROL_SERVICE, NO_ARG },
     { ControlCommandLine::CONTROL_APPLICATION, NO_ARG },
+    { ControlCommandLine::SET_VNC_PORT, NO_ARG },
+
 
     { DesktopServerCommandLine::DESKTOP_SERVER_KEY, NO_ARG },
     { QueryConnectionCommandLine::QUERY_CONNECTION, NO_ARG },
 
     { AdditionalActionApplication::LOCK_WORKSTATION_KEY, NO_ARG },
     { AdditionalActionApplication::LOGOUT_KEY, NO_ARG },
+	{ AdditionalActionApplication::STOP_AND_REMOVE_PORTABLE_SERVICE_KEY, NO_ARG },
+
 
     { ServiceControlCommandLine::INSTALL_SERVICE },
     { ServiceControlCommandLine::REMOVE_SERVICE },
     { ServiceControlCommandLine::REINSTALL_SERVICE },
     { ServiceControlCommandLine::START_SERVICE },
-    { ServiceControlCommandLine::STOP_SERVICE }
+    { ServiceControlCommandLine::START_SERVICE_PORTABLE },
+    { ServiceControlCommandLine::STOP_SERVICE },
+    { ServiceControlCommandLine::STOP_SERVICE_PORTABLE }
   };
 
   CommandLine parser;
@@ -76,8 +83,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   parser.parse(format,  sizeof(format) / sizeof(CommandLineFormat), lpCmdLine);
   parser.getOption(0, &firstKey);
 
-  if (firstKey.isEqualTo(TvnService::SERVICE_COMMAND_LINE_KEY)) {
-    TvnService tvnService;
+  if (firstKey.isEqualTo(TvnService::SERVICE_COMMAND_LINE_KEY) ||
+      firstKey.isEqualTo(TvnService::SERVICE_PORTABLE_COMMAND_LINE_KEY ) ) {
+    
+        
+    TvnService tvnService(firstKey.isEqualTo(TvnService::SERVICE_COMMAND_LINE_KEY) ? TvnService::SERVICE_NAME : TvnService::SERVICE_PORTABLE_NAME,
+                          lpCmdLine );
+    
     try {
       tvnService.run();
     } catch (Exception &) {
@@ -89,7 +101,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     firstKey.isEqualTo(ControlCommandLine::SET_CONTROL_PASSWORD) ||
     firstKey.isEqualTo(ControlCommandLine::SET_PRIMARY_VNC_PASSWORD) ||
     firstKey.isEqualTo(ControlCommandLine::CONTROL_SERVICE) ||
-    firstKey.isEqualTo(ControlCommandLine::CONTROL_APPLICATION)) {
+    firstKey.isEqualTo(ControlCommandLine::SET_VNC_PORT) ||
+    firstKey.isEqualTo(ControlCommandLine::CONTROL_APPLICATION) ) {
     try {
       ControlApplication tvnControl(hInstance, lpCmdLine);
 
@@ -102,7 +115,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       return 1;
     }
   } else if (firstKey.isEqualTo(AdditionalActionApplication::LOCK_WORKSTATION_KEY) ||
-    firstKey.isEqualTo(AdditionalActionApplication::LOGOUT_KEY)) {
+        firstKey.isEqualTo(AdditionalActionApplication::LOGOUT_KEY) ||
+		firstKey.isEqualTo(AdditionalActionApplication::STOP_AND_REMOVE_PORTABLE_SERVICE_KEY)) {
     try {
       AdditionalActionApplication actionApp(hInstance, lpCmdLine);
 
@@ -130,7 +144,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     firstKey.isEqualTo(ServiceControlCommandLine::REMOVE_SERVICE) ||
     firstKey.isEqualTo(ServiceControlCommandLine::REINSTALL_SERVICE) ||
     firstKey.isEqualTo(ServiceControlCommandLine::START_SERVICE) ||
-    firstKey.isEqualTo(ServiceControlCommandLine::STOP_SERVICE)) {
+    firstKey.isEqualTo(ServiceControlCommandLine::STOP_SERVICE)  || 
+    firstKey.isEqualTo(ServiceControlCommandLine::START_SERVICE_PORTABLE) ||
+    firstKey.isEqualTo(ServiceControlCommandLine::STOP_SERVICE_PORTABLE) ) {
     ServiceControlApplication tvnsc(hInstance, lpCmdLine);
 
     return tvnsc.run();

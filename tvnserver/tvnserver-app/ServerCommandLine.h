@@ -30,6 +30,13 @@
 class ServerCommandLine : public CommandLine
 {
 public:
+    static const TCHAR RUN_SERVER_PORTABLE_KEY[];
+    static const TCHAR RUN_SERVER_KEY[];
+    static const TCHAR SERVER_NAME_KEY[];
+    static const TCHAR VNC_INI_DIRECTORY_PATH[];
+
+
+public:
   ServerCommandLine();
   virtual ~ServerCommandLine();
 

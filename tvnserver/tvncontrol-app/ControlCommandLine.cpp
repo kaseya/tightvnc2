@@ -47,6 +47,13 @@ const TCHAR ControlCommandLine::SLAVE_MODE[] = _T("-slave");
 
 const TCHAR ControlCommandLine::DONT_ELEVATE[] = _T("-dontelevate");
 
+const TCHAR ControlCommandLine::PORTABLE[] = _T("-portable");
+
+const TCHAR ControlCommandLine::SET_VNC_PORT[] = _T("-setvncport");
+const TCHAR ControlCommandLine::VNC_INI_DIRECTORY[] = _T("-inidirectory");
+
+
+
 ControlCommandLine::ControlCommandLine()
 {
 }
@@ -70,7 +77,11 @@ void ControlCommandLine::parse(const TCHAR *commandLine)
     { CONFIG_APPLICATION, NO_ARG },
     { CONFIG_SERVICE, NO_ARG },
     { SLAVE_MODE, NO_ARG },
-    { DONT_ELEVATE, NO_ARG }
+    { DONT_ELEVATE, NO_ARG },
+    { PORTABLE, NO_ARG },
+    { SET_VNC_PORT, NEEDS_ARG },
+    { VNC_INI_DIRECTORY, NEEDS_ARG },
+
   };
 
   if (!CommandLine::parse(fmt, sizeof(fmt) / sizeof(CommandLineFormat), commandLine)) {
@@ -81,7 +92,8 @@ void ControlCommandLine::parse(const TCHAR *commandLine)
     throw CommandLineFormatException();
   }
 
-  if (hasConfigAppFlag() && m_foundKeys.size() > 1) {
+  if ( ( hasConfigAppFlag()  && ! hasPortableFlag() && m_foundKeys.size() > 1  ) ||
+       ( hasConfigAppFlag()  &&  hasPortableFlag()  && m_foundKeys.size() > 2 ) ) {
     throw CommandLineFormatException();
   }
 
@@ -98,11 +110,8 @@ void ControlCommandLine::parse(const TCHAR *commandLine)
     optionSpecified(CONNECT, &m_connectHostName);
   }
 
-  if ((hasSetVncPasswordFlag() || hasSetControlPasswordFlag()) && m_foundKeys.size() > 1) {
-    throw CommandLineFormatException();
-  } else {
-    optionSpecified(SET_CONTROL_PASSWORD, &m_controlPassword);
-    optionSpecified(SET_PRIMARY_VNC_PASSWORD, &m_vncPassword);
+  if(hasSetVncPortAndPrimaryPasswdFlag()) {
+      setVncPortAndPrimaryPassword();
   }
 
   if ((hasControlServiceFlag() || hasControlAppFlag()) && (isSlave()) && (m_foundKeys.size() > 2)) {
@@ -113,6 +122,14 @@ void ControlCommandLine::parse(const TCHAR *commandLine)
   if ((hasNotSlaveControl && !hasPassFile && m_foundKeys.size() > 2) ||
       (hasNotSlaveControl && hasPassFile && m_foundKeys.size() != 3)) {
     throw CommandLineFormatException();
+  }
+
+  if(hasSetVncPortFlag() && ! hasSetVncPasswordFlag()) {
+      setVncPort();
+  }
+
+  if(! hasSetVncPortFlag() && ( hasSetVncPasswordFlag() || hasSetControlPasswordFlag()) ) {
+      setVncOrControlPassword();
   }
 
   if (m_foundKeys.size() == 0) {
@@ -209,4 +226,76 @@ bool ControlCommandLine::isCommandSpecified()
 {
   return hasKillAllFlag() || hasReloadFlag() || hasSetControlPasswordFlag() ||
          hasSetVncPasswordFlag() || hasConnectFlag() || hasShutdownFlag();
+}
+
+bool ControlCommandLine::hasPortableFlag()
+{
+    return optionSpecified(PORTABLE);
+}
+
+bool ControlCommandLine::hasSetVncPortFlag()
+{
+    return optionSpecified(SET_VNC_PORT);
+}
+
+const int ControlCommandLine::getVncPort() const
+{
+    return _ttoi( m_vncPort.getString() );
+}
+
+bool ControlCommandLine::hasVncIniDirectoryFlag()
+{
+    return optionSpecified(VNC_INI_DIRECTORY);
+}
+
+const TCHAR* ControlCommandLine::getVncIniDirectoryPath() const
+{
+    return m_vncIniDirectoryPath.getString();
+}
+
+bool ControlCommandLine::hasSetVncPortAndPrimaryPasswdFlag()
+{
+    return optionSpecified(SET_VNC_PORT) && optionSpecified(SET_PRIMARY_VNC_PASSWORD);
+}
+
+void ControlCommandLine::setVncOrControlPassword()
+{
+    bool hasSetVncOrControlPasswordFlag =  hasSetVncPasswordFlag() || hasSetControlPasswordFlag();
+    if ( ( hasSetVncOrControlPasswordFlag && ! hasPortableFlag() && m_foundKeys.size() > 1 ) ||
+        ( hasSetVncOrControlPasswordFlag &&  hasPortableFlag()  && ! hasVncIniDirectoryFlag() && m_foundKeys.size() > 2 ) || 
+        ( hasSetVncOrControlPasswordFlag &&  hasPortableFlag()  && hasVncIniDirectoryFlag() && m_foundKeys.size() > 3 ) ) {
+            throw CommandLineFormatException();
+    } else {
+        optionSpecified(SET_CONTROL_PASSWORD, &m_controlPassword);
+        optionSpecified(SET_PRIMARY_VNC_PASSWORD, &m_vncPassword);
+        optionSpecified(VNC_INI_DIRECTORY, &m_vncIniDirectoryPath);
+
+    }
+}
+
+void ControlCommandLine::setVncPort()
+{
+    if ( ( hasSetVncPortFlag() && ! hasPortableFlag() && m_foundKeys.size() > 1 ) ||
+        ( hasSetVncPortFlag() &&  hasPortableFlag()  && ! hasVncIniDirectoryFlag() && m_foundKeys.size() > 2 )  ||
+        ( hasSetVncPortFlag() &&  hasPortableFlag() && hasVncIniDirectoryFlag() && m_foundKeys.size() > 3 ) ) {
+            throw CommandLineFormatException();
+    } else {
+        optionSpecified(SET_VNC_PORT, &m_vncPort);
+        optionSpecified(VNC_INI_DIRECTORY, &m_vncIniDirectoryPath);
+
+    }
+}
+
+void ControlCommandLine::setVncPortAndPrimaryPassword()
+{
+    if ( ( hasSetVncPortFlag() && hasSetVncPasswordFlag() && ! hasPortableFlag() && m_foundKeys.size() > 2 ) ||
+        ( hasSetVncPortFlag() && hasSetVncPasswordFlag() &&  hasPortableFlag()  && ! hasVncIniDirectoryFlag() && m_foundKeys.size() > 3 )  ||
+        ( hasSetVncPortFlag() && hasSetVncPasswordFlag() &&  hasPortableFlag() && hasVncIniDirectoryFlag() && m_foundKeys.size() > 4 ) ) {
+            throw CommandLineFormatException();
+    } else {
+        optionSpecified(SET_PRIMARY_VNC_PASSWORD, &m_vncPassword);
+        optionSpecified(SET_CONTROL_PASSWORD, &m_controlPassword);
+        optionSpecified(SET_VNC_PORT, &m_vncPort);
+        optionSpecified(VNC_INI_DIRECTORY, &m_vncIniDirectoryPath);
+    }
 }

@@ -23,18 +23,23 @@
 //
 
 #include "IniFileSettingsManager.h"
+#include "file-lib/File.h"
 
 #include <crtdbg.h>
+#include <iostream>
+
 
 IniFileSettingsManager::IniFileSettingsManager(const TCHAR *pathToFile, const TCHAR *appName)
 {
   m_pathToFile.setString(pathToFile);
   m_appName.setString(appName);
+  
 }
 
 IniFileSettingsManager::IniFileSettingsManager(const TCHAR *pathToFile)
 {
   m_pathToFile.setString(pathToFile);
+
 }
 
 IniFileSettingsManager::IniFileSettingsManager()
@@ -173,14 +178,15 @@ bool IniFileSettingsManager::setByte(const TCHAR *name, char value)
 
 bool IniFileSettingsManager::getBinaryData(const TCHAR *name, void *value, size_t *size)
 {
-  _ASSERT(FALSE);
-  return false;
+   if (!keyExist(name)) {
+        return false;
+    }
+    return GetPrivateProfileStruct(m_appName.getString(), name, value, *size, m_pathToFile.getString()) == TRUE ;
 }
 
 bool IniFileSettingsManager::setBinaryData(const TCHAR *name, const void *value, size_t size)
 {
-  _ASSERT(FALSE);
-  return false;
+    return WritePrivateProfileStruct( m_appName.getString(), name, (void*) value, size, m_pathToFile.getString() ) == TRUE;
 }
 
 void
@@ -216,4 +222,10 @@ IniFileSettingsManager::getPrivateProfileString(const TCHAR *name,
 
   } while (tooSmall);
 
+}
+
+void IniFileSettingsManager::iniFileExists() 
+{
+     File iniFile( m_pathToFile.getString() );
+    _ASSERT(iniFile.exists() == true );
 }

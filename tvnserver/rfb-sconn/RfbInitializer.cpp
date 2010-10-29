@@ -176,6 +176,11 @@ void RfbInitializer::doVncAuth()
   checkForBan();
 
   ServerConfig *srvConf = Configurator::getInstance()->getServerConfig();
+  if ( srvConf->shouldReloadConfigOnClientAuth() ) {
+	  Configurator::getInstance()->reloadConfig();
+	  srvConf = Configurator::getInstance()->getServerConfig();
+  }
+
   bool hasPrim = srvConf->hasPrimaryPassword();
   bool hasRdly = srvConf->hasReadOnlyPassword();
 

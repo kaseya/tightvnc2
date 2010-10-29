@@ -24,6 +24,7 @@
 
 #include "AdditionalActionApplication.h"
 #include "TvnServerHelp.h"
+#include "TvnService.h"
 
 #include "util/CommandLine.h"
 
@@ -31,6 +32,7 @@
 
 const TCHAR AdditionalActionApplication::LOCK_WORKSTATION_KEY[] = _T("-lockworkstation");
 const TCHAR AdditionalActionApplication::LOGOUT_KEY[] = _T("-logout");
+const TCHAR AdditionalActionApplication::STOP_AND_REMOVE_PORTABLE_SERVICE_KEY[] = _T("-stopportableondisconnect");
 
 AdditionalActionApplication::AdditionalActionApplication(HINSTANCE hInstance, const TCHAR *commandLine)
 : LocalWindowsApplication(hInstance), m_commandLine(commandLine)
@@ -47,7 +49,8 @@ int AdditionalActionApplication::run()
 
   CommandLineFormat format[] = {
     { LOCK_WORKSTATION_KEY, NO_ARG },
-    { LOGOUT_KEY, NO_ARG }
+    { LOGOUT_KEY, NO_ARG },
+    { STOP_AND_REMOVE_PORTABLE_SERVICE_KEY, NO_ARG },
   };
 
   if (!args.parse(format,
@@ -62,7 +65,9 @@ int AdditionalActionApplication::run()
       Workstation::lock();
     } else if (args.optionSpecified(LOGOUT_KEY)) {
       Workstation::logOff();
-    }
+	} else if (args.optionSpecified(STOP_AND_REMOVE_PORTABLE_SERVICE_KEY)) {
+		TvnService::removePortable();	
+	}
   } catch (SystemException &sysEx) {
     return sysEx.getErrorCode();
   }

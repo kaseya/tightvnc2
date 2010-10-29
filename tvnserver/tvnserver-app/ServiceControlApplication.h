@@ -46,7 +46,12 @@ private:
   void executeCommand(const ServiceControlCommandLine *cmdLine) const
     throw(SystemException);
   void setTvnControlStartEntry() const throw(SystemException);
+  void setTvnControlStartPortableEntry() const throw(SystemException);
+  void setTvnControlStartEntryAs(const TCHAR* runKey) const throw(SystemException);
+
   void removeTvnControlStartEntry() const throw(SystemException);
+  void removeTvnControlStartPortableEntry() const throw(SystemException);
+  void removeTvnControlEntry( const TCHAR* runKey ) const throw(SystemException);
   void reportError(const ServiceControlCommandLine *cmdLine,
                    const SCMClientException *ex) const;
   void reportError(const ServiceControlCommandLine *cmdLine,
@@ -54,6 +59,7 @@ private:
   void reportError(const ServiceControlCommandLine *cmdLine,
                    const TCHAR *errorMessage) const;
   void reportSuccess(const ServiceControlCommandLine *cmdLine) const;
+  StringStorage extractVncDirectoryPathIfPassedInCommandLine(const ServiceControlCommandLine *cmdLine, StringStorage& iniFilePath) const;
 
 private:
   StringStorage m_commandLine;
